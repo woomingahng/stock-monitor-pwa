@@ -62,6 +62,7 @@ export default function Home() {
   const [selectedStock, setSelectedStock] = useState<SearchResult | null>(null);
   const [targetPriceInput, setTargetPriceInput] = useState("");
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
+  const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
 
   const searchDebounceRef = useRef<NodeJS.Timeout>(null);
 
@@ -337,37 +338,41 @@ export default function Home() {
                 {stockAlerts.map(alert => (
                   <div 
                     key={alert.id}
-                    className="absolute flex flex-col items-center -translate-x-1/2 group/marker z-20 cursor-pointer"
+                    className="absolute flex flex-col items-center -translate-x-1/2 z-20 cursor-pointer"
                     style={{ 
                       left: `${getLeft(alert.targetPrice)}%`,
                       top: alert.type === 'UP' ? '50%' : 'auto',
                       bottom: alert.type === 'DOWN' ? '50%' : 'auto',
                     }}
+                    onMouseEnter={() => setHoveredMarkerId(alert.id)}
+                    onMouseLeave={() => setHoveredMarkerId(null)}
                   >
                     {alert.type === 'UP' ? (
-                       <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[8px] border-l-transparent border-r-transparent border-b-red-500 mt-1"></div>
+                       <div className="w-0 h-0 border-l-transparent border-r-transparent border-b-red-500 mt-1 border-l-[6px] border-r-[6px] border-b-[8px]"></div>
                     ) : (
-                       <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-blue-500 mb-1"></div>
+                       <div className="w-0 h-0 border-l-transparent border-r-transparent border-t-blue-500 mb-1 border-l-[6px] border-r-[6px] border-t-[8px]"></div>
                     )}
                     
                     {/* Tooltip on hover */}
-                    <div className="absolute hidden group-hover/marker:flex bg-[#111] text-[10px] px-2 py-1.5 rounded border border-[#444] whitespace-nowrap z-[100] flex-col gap-1 shadow-[0_0_10px_rgba(0,0,0,0.8)]"
-                         style={{
-                           top: alert.type === 'UP' ? '14px' : 'auto',
-                           bottom: alert.type === 'DOWN' ? '14px' : 'auto',
-                         }}>
-                      <div className="flex items-center gap-2 justify-between">
-                        <span className={alert.type === 'UP' ? 'text-red-400 font-bold' : 'text-blue-400 font-bold'}>
-                          목표: {alert.targetPrice.toLocaleString()}원
-                        </span>
-                        <button onClick={(e) => { e.stopPropagation(); removeAlert(alert.id); }} className="text-gray-500 hover:text-red-400 p-0.5 rounded hover:bg-[#222]">
-                           <Trash2 className="w-3 h-3" />
-                        </button>
+                    {hoveredMarkerId === alert.id && (
+                      <div className="absolute bg-[#111] px-2 py-1.5 rounded border border-[#444] whitespace-nowrap z-[100] flex flex-col gap-1 shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px]"
+                           style={{
+                             top: alert.type === 'UP' ? '14px' : 'auto',
+                             bottom: alert.type === 'DOWN' ? '14px' : 'auto',
+                           }}>
+                        <div className="flex items-center gap-2 justify-between">
+                          <span className={alert.type === 'UP' ? 'text-red-400 font-bold' : 'text-blue-400 font-bold'}>
+                            목표: {alert.targetPrice.toLocaleString()}원
+                          </span>
+                          <button onClick={(e) => { e.stopPropagation(); removeAlert(alert.id); }} className="text-gray-500 hover:text-red-400 p-0.5 rounded hover:bg-[#222]">
+                             <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="text-gray-400">
+                          현재: <span className="text-gray-200">{currentPriceStr}</span>
+                        </div>
                       </div>
-                      <div className="text-gray-400">
-                        현재: <span className="text-gray-200">{currentPriceStr}</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
