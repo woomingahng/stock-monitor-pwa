@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Plus, Trash2, BellRing, ChevronUp, ChevronDown, Bell } from "lucide-react";
+import { Search, Plus, Trash2, BellRing, ChevronUp, ChevronDown, Bell, Minimize2, Maximize2, X } from "lucide-react";
 
 interface SearchResult {
   name: string;
@@ -57,6 +57,7 @@ export default function Home() {
   // Selected stock for adding
   const [selectedStock, setSelectedStock] = useState<SearchResult | null>(null);
   const [targetPriceInput, setTargetPriceInput] = useState("");
+  const [isCompact, setIsCompact] = useState(false);
 
   const searchDebounceRef = useRef<NodeJS.Timeout>(null);
 
@@ -219,11 +220,70 @@ export default function Home() {
     setAlerts(alerts.filter(a => a.id !== id));
   };
 
+  if (isCompact) {
+    return (
+      <div className="min-h-screen bg-black text-white p-2 flex flex-col gap-2">
+        {/* Compact Header */}
+        <div className="flex justify-between items-center pb-1 border-b border-[#333]">
+          <span className="text-[10px] text-emerald-500 font-bold flex items-center gap-1">
+            <Bell className="w-3 h-3" /> 모니터
+          </span>
+          <button 
+            onClick={() => setIsCompact(false)} 
+            className="text-gray-500 hover:text-white p-1 rounded hover:bg-[#222]"
+            title="기본 모드로 돌아가기"
+          >
+            <Maximize2 className="w-3 h-3" />
+          </button>
+        </div>
+        
+        {/* Compact List */}
+        <div className="flex flex-col gap-1.5 overflow-y-auto">
+          {alerts.length === 0 ? (
+            <div className="text-center py-4 text-gray-600 text-[10px]">알림이 없습니다.</div>
+          ) : (
+            alerts.map(alert => {
+              const currentPriceStr = prices[alert.code]?.price || "...";
+              return (
+                <div key={alert.id} className="flex justify-between items-center bg-[#111] p-2 rounded-lg border border-[#222]">
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-medium text-gray-200 truncate max-w-[70px]">{alert.name}</span>
+                    <div className={`flex items-center text-[10px] ${alert.type === 'UP' ? 'text-red-400' : 'text-blue-400'}`}>
+                      {alert.type === 'UP' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      {alert.targetPrice.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold">{currentPriceStr}</span>
+                    <button 
+                      onClick={() => removeAlert(alert.id)}
+                      className="text-gray-600 hover:text-red-400"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen p-4 max-w-md mx-auto flex flex-col gap-6">
+    <div className="min-h-screen p-4 max-w-md mx-auto flex flex-col gap-6 transition-all">
       <header className="flex items-center gap-2 pb-2 border-b border-[#333]">
         <Bell className="w-5 h-5 text-emerald-400" />
         <h1 className="text-xl font-bold tracking-tight">주식 모니터</h1>
+        <button 
+          onClick={() => setIsCompact(true)}
+          className="ml-auto text-gray-400 hover:text-white p-1 rounded hover:bg-[#333] transition-colors flex items-center gap-1 text-xs"
+          title="컴팩트 위젯 모드"
+        >
+          <Minimize2 className="w-4 h-4" />
+          <span className="hidden sm:inline">위젯 모드</span>
+        </button>
       </header>
 
       {/* Add Alert Section */}
