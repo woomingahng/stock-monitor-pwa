@@ -74,6 +74,11 @@ export default function Home() {
       if (Notification.permission !== "granted" && Notification.permission !== "denied") {
         Notification.requestPermission();
       }
+      
+      // 데스크톱 PWA 환경일 경우 창 크기를 매우 작게 강제 조정 시도
+      try {
+        window.resizeTo(300, 500);
+      } catch (e) {}
     }
   }, []);
 
@@ -269,13 +274,13 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-2 max-w-md mx-auto flex flex-col gap-4 transition-all">
+    <div className="min-h-screen p-2 max-w-sm mx-auto flex flex-col gap-4 transition-all overflow-x-hidden">
       <header className="flex items-center gap-2 pb-2 border-b border-[#333]">
-        <Bell className="w-5 h-5 text-emerald-400" />
-        <h1 className="text-lg font-bold tracking-tight">주식 모니터</h1>
+        <Bell className="w-5 h-5 text-emerald-400 shrink-0" />
+        <h1 className="text-lg font-bold tracking-tight truncate">주식 모니터</h1>
         <button 
           onClick={() => setIsCompact(true)}
-          className="ml-auto text-gray-400 hover:text-white p-1 rounded hover:bg-[#333] transition-colors flex items-center gap-1 text-xs"
+          className="ml-auto shrink-0 text-gray-400 hover:text-white p-1 rounded hover:bg-[#333] transition-colors flex items-center gap-1 text-xs"
           title="컴팩트 위젯 모드"
         >
           <Minimize2 className="w-4 h-4" />
@@ -291,8 +296,8 @@ export default function Home() {
               <Search className="w-4 h-4 ml-3 text-gray-500" />
               <input 
                 type="text" 
-                className="w-full bg-transparent p-3 text-sm outline-none"
-                placeholder="종목명 검색 (예: 삼성전자)"
+                className="w-full bg-transparent p-3 text-sm outline-none min-w-0"
+                placeholder="종목코드 (예: 005930)"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
               />
@@ -367,11 +372,11 @@ export default function Home() {
               const currentPriceStr = prices[alert.code]?.price || "...";
               
               return (
-                <li key={alert.id} className="bg-[#1a1a1a] p-3 rounded-xl border border-[#333] flex items-center justify-between group">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-[15px]">{prices[alert.code]?.name || alert.name}</span>
-                      <span className="text-xs bg-black text-gray-400 px-1.5 py-0.5 rounded border border-[#333]">
+                <li key={alert.id} className="bg-[#1a1a1a] p-3 rounded-xl border border-[#333] flex flex-wrap items-center justify-between group gap-2">
+                  <div className="flex flex-col gap-1 min-w-[120px]">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm truncate max-w-[100px]">{prices[alert.code]?.name || alert.name}</span>
+                      <span className="text-[10px] bg-black text-gray-400 px-1.5 py-0.5 rounded border border-[#333]">
                         {alert.code}
                       </span>
                     </div>
@@ -380,12 +385,12 @@ export default function Home() {
                         {alert.type === 'UP' ? <ChevronUp className="w-4 h-4 mr-0.5" /> : <ChevronDown className="w-4 h-4 mr-0.5" />}
                         {alert.targetPrice.toLocaleString()}원
                       </div>
-                      <span className="text-gray-600 text-xs">(현재: {currentPriceStr})</span>
+                      <span className="text-gray-600 text-xs truncate max-w-[80px]">(현재: {currentPriceStr})</span>
                     </div>
                   </div>
                   <button 
                     onClick={() => removeAlert(alert.id)}
-                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-[#222] rounded-lg opacity-50 group-hover:opacity-100 transition-all"
+                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-[#222] rounded-lg opacity-80 transition-all shrink-0 ml-auto"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
