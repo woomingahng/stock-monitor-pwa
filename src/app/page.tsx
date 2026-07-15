@@ -269,10 +269,10 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-4 max-w-md mx-auto flex flex-col gap-6 transition-all">
+    <div className="min-h-screen p-2 max-w-md mx-auto flex flex-col gap-4 transition-all">
       <header className="flex items-center gap-2 pb-2 border-b border-[#333]">
         <Bell className="w-5 h-5 text-emerald-400" />
-        <h1 className="text-xl font-bold tracking-tight">주식 모니터</h1>
+        <h1 className="text-lg font-bold tracking-tight">주식 모니터</h1>
         <button 
           onClick={() => setIsCompact(true)}
           className="ml-auto text-gray-400 hover:text-white p-1 rounded hover:bg-[#333] transition-colors flex items-center gap-1 text-xs"
@@ -284,9 +284,7 @@ export default function Home() {
       </header>
 
       {/* Add Alert Section */}
-      <section className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333] relative">
-        <h2 className="text-sm font-medium text-gray-400 mb-3">새 알림 등록</h2>
-        
+      <section className="bg-[#1a1a1a] rounded-xl p-3 border border-[#333] relative">
         {!selectedStock ? (
           <div className="relative">
             <div className="flex items-center bg-black border border-[#333] rounded-lg overflow-hidden focus-within:border-emerald-500 transition-colors">
@@ -353,21 +351,12 @@ export default function Home() {
                 <Plus className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              입력하신 목표가가 현재가보다 높으면 <strong>상승 돌파 시</strong>,<br/>
-              낮으면 <strong>하락 돌파 시</strong> 자동으로 알림이 설정됩니다.
-            </p>
           </div>
         )}
       </section>
 
       {/* Alert List Section */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-gray-400 flex items-center justify-between">
-          <span>활성화된 알림</span>
-          <span className="bg-[#333] text-xs py-0.5 px-2 rounded-full">{alerts.length}</span>
-        </h2>
-        
+      <section className="flex flex-col gap-2">
         {alerts.length === 0 ? (
           <div className="text-center py-10 text-gray-600 text-sm border border-dashed border-[#333] rounded-xl">
             등록된 알림이 없습니다.
@@ -378,7 +367,7 @@ export default function Home() {
               const currentPriceStr = prices[alert.code]?.price || "...";
               
               return (
-                <li key={alert.id} className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] flex items-center justify-between group">
+                <li key={alert.id} className="bg-[#1a1a1a] p-3 rounded-xl border border-[#333] flex items-center justify-between group">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-[15px]">{prices[alert.code]?.name || alert.name}</span>
@@ -406,10 +395,6 @@ export default function Home() {
           </ul>
         )}
       </section>
-      
-      <footer className="mt-auto pt-4 text-center text-xs text-gray-600">
-        10초 간격으로 가격을 자동 업데이트합니다.
-      </footer>
     </div>
   );
 }
