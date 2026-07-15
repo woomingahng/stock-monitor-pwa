@@ -35,6 +35,9 @@ export async function GET(request: Request) {
       price: stockData.nv,
       change: stockData.cv,
       changeRate: stockData.cr,
+      low: stockData.lv,
+      high: stockData.hv,
+      prevClose: stockData.pcv,
     });
   } catch (error) {
     console.error('Price API error:', error);

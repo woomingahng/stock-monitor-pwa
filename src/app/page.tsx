@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Plus, Trash2, BellRing, ChevronUp, ChevronDown, Bell, Minimize2, Maximize2, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Search, Plus, Trash2, ChevronUp, ChevronDown, Bell, Minimize2, Maximize2, X, ExternalLink } from "lucide-react";
 
 interface SearchResult {
   name: string;
@@ -23,6 +24,9 @@ interface PriceData {
   price: string; // string from api like "80,000"
   change: string;
   changeRate: string;
+  low?: number;
+  high?: number;
+  prevClose?: number;
 }
 
 function playBeep() {
@@ -58,6 +62,7 @@ export default function Home() {
   const [selectedStock, setSelectedStock] = useState<SearchResult | null>(null);
   const [targetPriceInput, setTargetPriceInput] = useState("");
   const [isCompact, setIsCompact] = useState(false);
+  const [pipWindow, setPipWindow] = useState<Window | null>(null);
 
   const searchDebounceRef = useRef<NodeJS.Timeout>(null);
 
@@ -225,53 +230,149 @@ export default function Home() {
     setAlerts(alerts.filter(a => a.id !== id));
   };
 
-  if (isCompact) {
+  const openPiP = async () => {
+    if (!('documentPictureInPicture' in window)) {
+      alert('이 브라우저는 PiP 팝업을 지원하지 않습니다. 최신 크롬을 사용해주세요.');
+      return;
+    }
+    try {
+      const pip = await (window as any).documentPictureInPicture.requestWindow({
+        width: 320,
+        height: 400,
+      });
+      
+      [...document.styleSheets].forEach((styleSheet) => {
+        try {
+          const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+          const style = document.createElement('style');
+          style.textContent = cssRules;
+          pip.document.head.appendChild(style);
+        } catch (e) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.type = styleSheet.type;
+          link.media = (styleSheet as any).media?.mediaText || '';
+          link.href = styleSheet.href || '';
+          pip.document.head.appendChild(link);
+        }
+      });
+      
+      const script = document.createElement('script');
+      script.src = "https://cdn.tailwindcss.com";
+      pip.document.head.appendChild(script);
+
+      pip.addEventListener('pagehide', () => {
+        setPipWindow(null);
+      });
+      
+      setPipWindow(pip);
+    } catch (error) {
+      console.error(error);
+      alert('PiP 팝업을 여는데 실패했습니다.');
+    }
+  };
+
+  const groupedAlerts = alerts.reduce((acc, alert) => {
+    if (!acc[alert.code]) {
+      acc[alert.code] = [];
+    }
+    acc[alert.code].push(alert);
+    return acc;
+  }, {} as Record<string, Alert[]>);
+
+  const renderAlertList = () => {
+    if (alerts.length === 0) {
+      return (
+        <div className="text-center py-10 text-gray-600 text-sm border border-dashed border-[#333] rounded-xl mx-2">
+          등록된 알림이 없습니다.
+        </div>
+      );
+    }
+
     return (
-      <div className="min-h-screen bg-black text-white p-1 flex flex-col gap-1 relative group">
-        {/* Floating Expand Button (visible on hover) */}
-        <button 
-          onClick={() => setIsCompact(false)} 
-          className="absolute top-1 right-1 z-10 text-gray-500 hover:text-white p-1 bg-black/60 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-          title="기본 모드로 돌아가기"
-        >
-          <Maximize2 className="w-3 h-3" />
-        </button>
-        
-        {/* Compact List */}
-        <div className="flex flex-col gap-1 overflow-y-auto w-full pt-4">
-          {alerts.length === 0 ? (
-            <div className="text-center py-2 text-gray-600 text-[10px]">알림이 없습니다.</div>
-          ) : (
-            alerts.map(alert => {
-              const currentPriceStr = prices[alert.code]?.price || "...";
-              const stockName = prices[alert.code]?.name || alert.name;
-              
-              return (
-                <div key={alert.id} className="flex justify-between items-center bg-[#111] p-1.5 rounded-md border border-[#222]">
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-medium text-gray-200 truncate max-w-[70px]">{stockName}</span>
-                    <div className={`flex items-center text-[9px] ${alert.type === 'UP' ? 'text-red-400' : 'text-blue-400'}`}>
-                      {alert.type === 'UP' ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
-                      {alert.targetPrice.toLocaleString()}
+      <div className="flex flex-col gap-3 p-2">
+        {Object.entries(groupedAlerts).map(([code, stockAlerts]) => {
+          const stockInfo = prices[code];
+          const stockName = stockInfo?.name || stockAlerts[0].name;
+          const currentPrice = stockInfo?.price ? Number(stockInfo.price.toString().replace(/,/g, '')) : 0;
+          const currentPriceStr = stockInfo?.price || "...";
+          const low = stockInfo?.low ? Number(stockInfo.low) : currentPrice * 0.95;
+          const high = stockInfo?.high ? Number(stockInfo.high) : currentPrice * 1.05;
+
+          const minTarget = Math.min(...stockAlerts.map(a => a.targetPrice));
+          const maxTarget = Math.max(...stockAlerts.map(a => a.targetPrice));
+          
+          const minBound = Math.min(low, minTarget, currentPrice) * 0.98;
+          const maxBound = Math.max(high, maxTarget, currentPrice) * 1.02;
+          const range = maxBound - minBound;
+
+          const getLeft = (val: number) => {
+            if (range === 0) return 50;
+            return Math.max(0, Math.min(100, ((val - minBound) / range) * 100));
+          };
+
+          return (
+            <div key={code} className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] flex flex-col gap-4 relative">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-[15px]">{stockName}</span>
+                  <span className="text-[10px] bg-black text-gray-400 px-1.5 py-0.5 rounded border border-[#333]">{code}</span>
+                </div>
+                <span className="font-semibold text-[15px]">{currentPriceStr}</span>
+              </div>
+
+              <div className="relative w-full h-8 mt-2 mb-2">
+                {/* Base line */}
+                <div className="absolute top-1/2 left-0 right-0 h-1 bg-[#333] rounded-full -translate-y-1/2"></div>
+                
+                {/* Current Price Marker */}
+                {currentPrice > 0 && (
+                  <div 
+                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)] z-10"
+                    style={{ left: `${getLeft(currentPrice)}%` }}
+                    title={`현재가: ${currentPriceStr}`}
+                  ></div>
+                )}
+
+                {/* Target Price Markers */}
+                {stockAlerts.map(alert => (
+                  <div 
+                    key={alert.id}
+                    className="absolute flex flex-col items-center -translate-x-1/2 group/marker z-20 cursor-pointer"
+                    style={{ 
+                      left: `${getLeft(alert.targetPrice)}%`,
+                      top: alert.type === 'UP' ? '50%' : 'auto',
+                      bottom: alert.type === 'DOWN' ? '50%' : 'auto',
+                    }}
+                  >
+                    {alert.type === 'UP' ? (
+                       <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[8px] border-l-transparent border-r-transparent border-b-red-500 mt-1"></div>
+                    ) : (
+                       <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-blue-500 mb-1"></div>
+                    )}
+                    
+                    {/* Tooltip on hover */}
+                    <div className="absolute opacity-0 group-hover/marker:opacity-100 transition-opacity bg-black text-[11px] px-2 py-1.5 rounded border border-[#444] whitespace-nowrap z-30 flex items-center gap-2 shadow-xl"
+                         style={{
+                           top: alert.type === 'UP' ? '14px' : 'auto',
+                           bottom: alert.type === 'DOWN' ? '14px' : 'auto',
+                         }}>
+                      <span className={alert.type === 'UP' ? 'text-red-400 font-bold' : 'text-blue-400 font-bold'}>{alert.targetPrice.toLocaleString()}원</span>
+                      <button onClick={(e) => { e.stopPropagation(); removeAlert(alert.id); }} className="text-gray-500 hover:text-red-400 p-0.5 rounded hover:bg-[#222]">
+                         <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-semibold">{currentPriceStr}</span>
-                    <button 
-                      onClick={() => removeAlert(alert.id)}
-                      className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="w-2.5 h-2.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
-  }
+  };
+
+
 
   return (
     <div className="min-h-screen p-2 max-w-sm mx-auto flex flex-col gap-4 transition-all overflow-x-hidden">
@@ -279,8 +380,16 @@ export default function Home() {
         <Bell className="w-5 h-5 text-emerald-400 shrink-0" />
         <h1 className="text-lg font-bold tracking-tight truncate">주식 모니터</h1>
         <button 
+          onClick={openPiP}
+          className="ml-auto shrink-0 text-emerald-500 hover:text-emerald-400 p-1.5 rounded bg-[#222] hover:bg-[#333] transition-colors flex items-center gap-1 text-xs border border-[#333]"
+          title="PiP 초소형 팝업 모드"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline font-medium">PiP 팝업</span>
+        </button>
+        <button 
           onClick={() => setIsCompact(true)}
-          className="ml-auto shrink-0 text-gray-400 hover:text-white p-1 rounded hover:bg-[#333] transition-colors flex items-center gap-1 text-xs"
+          className="shrink-0 text-gray-400 hover:text-white p-1 rounded hover:bg-[#333] transition-colors flex items-center gap-1 text-xs"
           title="컴팩트 위젯 모드"
         >
           <Minimize2 className="w-4 h-4" />
@@ -362,44 +471,15 @@ export default function Home() {
 
       {/* Alert List Section */}
       <section className="flex flex-col gap-2">
-        {alerts.length === 0 ? (
-          <div className="text-center py-10 text-gray-600 text-sm border border-dashed border-[#333] rounded-xl">
-            등록된 알림이 없습니다.
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {alerts.map(alert => {
-              const currentPriceStr = prices[alert.code]?.price || "...";
-              
-              return (
-                <li key={alert.id} className="bg-[#1a1a1a] p-3 rounded-xl border border-[#333] flex flex-wrap items-center justify-between group gap-2">
-                  <div className="flex flex-col gap-1 min-w-[120px]">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm truncate max-w-[100px]">{prices[alert.code]?.name || alert.name}</span>
-                      <span className="text-[10px] bg-black text-gray-400 px-1.5 py-0.5 rounded border border-[#333]">
-                        {alert.code}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm mt-1">
-                      <div className={`flex items-center ${alert.type === 'UP' ? 'text-red-400' : 'text-blue-400'}`}>
-                        {alert.type === 'UP' ? <ChevronUp className="w-4 h-4 mr-0.5" /> : <ChevronDown className="w-4 h-4 mr-0.5" />}
-                        {alert.targetPrice.toLocaleString()}원
-                      </div>
-                      <span className="text-gray-600 text-xs truncate max-w-[80px]">(현재: {currentPriceStr})</span>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => removeAlert(alert.id)}
-                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-[#222] rounded-lg opacity-80 transition-all shrink-0 ml-auto"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        {renderAlertList()}
       </section>
+
+      {pipWindow && createPortal(
+        <div className="bg-black text-white min-h-screen">
+           {renderAlertList()}
+        </div>,
+        pipWindow.document.body
+      )}
     </div>
   );
 }
