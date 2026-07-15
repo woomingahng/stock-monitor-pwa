@@ -351,15 +351,22 @@ export default function Home() {
                     )}
                     
                     {/* Tooltip on hover */}
-                    <div className="absolute opacity-0 group-hover/marker:opacity-100 transition-opacity bg-black text-[11px] px-2 py-1.5 rounded border border-[#444] whitespace-nowrap z-30 flex items-center gap-2 shadow-xl"
+                    <div className="absolute opacity-0 group-hover/marker:opacity-100 transition-opacity bg-[#111] text-[10px] px-2 py-1.5 rounded border border-[#444] whitespace-nowrap z-30 flex flex-col gap-1 shadow-xl"
                          style={{
                            top: alert.type === 'UP' ? '14px' : 'auto',
                            bottom: alert.type === 'DOWN' ? '14px' : 'auto',
                          }}>
-                      <span className={alert.type === 'UP' ? 'text-red-400 font-bold' : 'text-blue-400 font-bold'}>{alert.targetPrice.toLocaleString()}원</span>
-                      <button onClick={(e) => { e.stopPropagation(); removeAlert(alert.id); }} className="text-gray-500 hover:text-red-400 p-0.5 rounded hover:bg-[#222]">
-                         <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-2 justify-between">
+                        <span className={alert.type === 'UP' ? 'text-red-400 font-bold' : 'text-blue-400 font-bold'}>
+                          목표: {alert.targetPrice.toLocaleString()}원
+                        </span>
+                        <button onClick={(e) => { e.stopPropagation(); removeAlert(alert.id); }} className="text-gray-500 hover:text-red-400 p-0.5 rounded hover:bg-[#222]">
+                           <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="text-gray-400">
+                        현재: <span className="text-gray-200">{currentPriceStr}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
