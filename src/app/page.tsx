@@ -61,7 +61,6 @@ export default function Home() {
   // Selected stock for adding
   const [selectedStock, setSelectedStock] = useState<SearchResult | null>(null);
   const [targetPriceInput, setTargetPriceInput] = useState("");
-  const [isCompact, setIsCompact] = useState(false);
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
 
   const searchDebounceRef = useRef<NodeJS.Timeout>(null);
