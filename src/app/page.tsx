@@ -351,7 +351,7 @@ export default function Home() {
                     )}
                     
                     {/* Tooltip on hover */}
-                    <div className="absolute opacity-0 group-hover/marker:opacity-100 transition-opacity bg-[#111] text-[10px] px-2 py-1.5 rounded border border-[#444] whitespace-nowrap z-30 flex flex-col gap-1 shadow-xl"
+                    <div className="absolute opacity-0 group-hover/marker:opacity-100 transition-opacity bg-[#111] text-[10px] px-2 py-1.5 rounded border border-[#444] whitespace-nowrap z-50 flex flex-col gap-1 shadow-xl"
                          style={{
                            top: alert.type === 'UP' ? '14px' : 'auto',
                            bottom: alert.type === 'DOWN' ? '14px' : 'auto',
