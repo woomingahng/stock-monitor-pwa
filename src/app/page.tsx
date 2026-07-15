@@ -328,10 +328,23 @@ export default function Home() {
                 {/* Current Price Marker */}
                 {currentPrice > 0 && (
                   <div 
-                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)] z-10"
+                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 cursor-pointer"
                     style={{ left: `${getLeft(currentPrice)}%` }}
-                    title={`현재가: ${currentPriceStr}`}
-                  ></div>
+                    onMouseEnter={() => setHoveredMarkerId(`current-${code}`)}
+                    onMouseLeave={() => setHoveredMarkerId(null)}
+                  >
+                    <div className="w-3.5 h-3.5 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
+                    {hoveredMarkerId === `current-${code}` && (
+                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
+                           style={{
+                             top: '14px',
+                             left: '50%',
+                             transform: 'translateX(-50%)'
+                           }}>
+                        현재: <span className="font-bold text-white">{currentPriceStr}</span>원
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {/* Target Price Markers */}
@@ -355,22 +368,17 @@ export default function Home() {
                     
                     {/* Tooltip on hover */}
                     {hoveredMarkerId === alert.id && (
-                      <div className="absolute bg-[#111] px-2 py-1.5 rounded border border-[#444] whitespace-nowrap z-[100] flex flex-col gap-1 shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px]"
+                      <div className="absolute bg-[#111] px-2 py-1.5 rounded border border-[#444] whitespace-nowrap z-[100] flex items-center gap-2 shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px]"
                            style={{
                              top: alert.type === 'UP' ? '14px' : 'auto',
                              bottom: alert.type === 'DOWN' ? '14px' : 'auto',
                            }}>
-                        <div className="flex items-center gap-2 justify-between">
-                          <span className={alert.type === 'UP' ? 'text-red-400 font-bold' : 'text-blue-400 font-bold'}>
-                            목표: {alert.targetPrice.toLocaleString()}원
-                          </span>
-                          <button onClick={(e) => { e.stopPropagation(); removeAlert(alert.id); }} className="text-gray-500 hover:text-red-400 p-0.5 rounded hover:bg-[#222]">
-                             <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <div className="text-gray-400">
-                          현재: <span className="text-gray-200">{currentPriceStr}</span>
-                        </div>
+                        <span className={alert.type === 'UP' ? 'text-red-400 font-bold' : 'text-blue-400 font-bold'}>
+                          목표: {alert.targetPrice.toLocaleString()}원
+                        </span>
+                        <button onClick={(e) => { e.stopPropagation(); removeAlert(alert.id); }} className="text-gray-500 hover:text-red-400 p-0.5 rounded hover:bg-[#222]">
+                           <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     )}
                   </div>
