@@ -11,6 +11,11 @@ export async function GET(request: Request) {
   }
 
   try {
+    // 만약 정확히 6자리 숫자(종목코드)를 입력했다면 검색을 건너뛰고 바로 반환합니다.
+    if (/^\d{6}$/.test(query)) {
+      return NextResponse.json([{ name: '직접 입력한 코드', code: query }]);
+    }
+
     // 1. Fetch search results from Naver Finance
     const searchUrl = `https://finance.naver.com/search/searchList.naver?query=${encodeURIComponent(query)}`;
     const response = await fetch(searchUrl, {
