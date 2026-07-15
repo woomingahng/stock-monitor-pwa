@@ -1,65 +1,353 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { Search, Plus, Trash2, BellRing, ChevronUp, ChevronDown, Bell } from "lucide-react";
+
+interface SearchResult {
+  name: string;
+  code: string;
+}
+
+interface Alert {
+  id: string;
+  code: string;
+  name: string;
+  targetPrice: number;
+  type: "UP" | "DOWN";
+  registeredPrice: number;
+}
+
+interface PriceData {
+  code: string;
+  name: string;
+  price: string; // string from api like "80,000"
+  change: string;
+  changeRate: string;
+}
+
+function playBeep() {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    
+    gainNode.gain.setValueAtTime(0.1, ctx.currentTime); // Not too loud
+    
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {
+    console.error("Audio error", e);
+  }
+}
 
 export default function Home() {
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [prices, setPrices] = useState<Record<string, PriceData>>({});
+  
+  // Selected stock for adding
+  const [selectedStock, setSelectedStock] = useState<SearchResult | null>(null);
+  const [targetPriceInput, setTargetPriceInput] = useState("");
+
+  const searchDebounceRef = useRef<NodeJS.Timeout>(null);
+
+  // Load from local storage
+  useEffect(() => {
+    const saved = localStorage.getItem("stock-alerts");
+    if (saved) {
+      try {
+        setAlerts(JSON.parse(saved));
+      } catch (e) {}
+    }
+    
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
+  // Save to local storage
+  useEffect(() => {
+    localStorage.setItem("stock-alerts", JSON.stringify(alerts));
+  }, [alerts]);
+
+  // Handle Search
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    searchDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        setSearchResults(data || []);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [query]);
+
+  // Polling Price Data
+  useEffect(() => {
+    const fetchPrices = async () => {
+      if (alerts.length === 0) return;
+      
+      const uniqueCodes = Array.from(new Set(alerts.map(a => a.code)));
+      const newPrices: Record<string, PriceData> = { ...prices };
+      
+      let alertsToRemove: string[] = [];
+
+      await Promise.all(
+        uniqueCodes.map(async (code) => {
+          try {
+            const res = await fetch(`/api/price?code=${code}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            newPrices[code] = data;
+
+            // Check alerts for this code
+            const currentPriceNum = parseInt(data.price.replace(/,/g, ''), 10);
+            
+            alerts.filter(a => a.code === code).forEach(alert => {
+              let isTriggered = false;
+              if (alert.type === "UP" && currentPriceNum >= alert.targetPrice) isTriggered = true;
+              if (alert.type === "DOWN" && currentPriceNum <= alert.targetPrice) isTriggered = true;
+
+              if (isTriggered && !alertsToRemove.includes(alert.id)) {
+                // Trigger notification
+                if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+                  new Notification(`주식 알림: ${alert.name}`, {
+                    body: `목표가 ${alert.targetPrice.toLocaleString()}원 도달! (현재가: ${data.price}원)`,
+                    icon: '/icon-192x192.png'
+                  });
+                }
+                playBeep();
+                alertsToRemove.push(alert.id);
+              }
+            });
+          } catch (e) {
+            console.error("Fetch price error for", code, e);
+          }
+        })
+      );
+
+      setPrices(newPrices);
+
+      if (alertsToRemove.length > 0) {
+        setAlerts(prev => prev.filter(a => !alertsToRemove.includes(a.id)));
+      }
+    };
+
+    fetchPrices(); // initial fetch
+    const intervalId = setInterval(fetchPrices, 10000); // 10s
+
+    return () => clearInterval(intervalId);
+  }, [alerts]); // Reacts to changes in alerts
+
+  // Auto fetch current price when stock selected
+  useEffect(() => {
+    if (selectedStock && !prices[selectedStock.code]) {
+      fetch(`/api/price?code=${selectedStock.code}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.price) {
+             setPrices(prev => ({ ...prev, [selectedStock.code]: data }));
+          }
+        });
+    }
+  }, [selectedStock, prices]);
+
+  const handleAddAlert = () => {
+    if (!selectedStock || !targetPriceInput) return;
+    
+    const targetNum = parseInt(targetPriceInput.replace(/,/g, ''), 10);
+    if (isNaN(targetNum) || targetNum <= 0) return;
+
+    // Get current price to determine UP or DOWN
+    const currentPriceStr = prices[selectedStock.code]?.price || "0";
+    const currentPriceNum = parseInt(currentPriceStr.replace(/,/g, ''), 10);
+    
+    if (currentPriceNum === 0) {
+      alert("현재가를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
+    const type = targetNum >= currentPriceNum ? "UP" : "DOWN";
+
+    const newAlert: Alert = {
+      id: Date.now().toString(),
+      code: selectedStock.code,
+      name: selectedStock.name,
+      targetPrice: targetNum,
+      type,
+      registeredPrice: currentPriceNum
+    };
+
+    setAlerts([...alerts, newAlert]);
+    setSelectedStock(null);
+    setQuery("");
+    setTargetPriceInput("");
+    setSearchResults([]);
+  };
+
+  const removeAlert = (id: string) => {
+    setAlerts(alerts.filter(a => a.id !== id));
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="min-h-screen p-4 max-w-md mx-auto flex flex-col gap-6">
+      <header className="flex items-center gap-2 pb-2 border-b border-[#333]">
+        <Bell className="w-5 h-5 text-emerald-400" />
+        <h1 className="text-xl font-bold tracking-tight">주식 모니터</h1>
+      </header>
+
+      {/* Add Alert Section */}
+      <section className="bg-[#1a1a1a] rounded-xl p-4 border border-[#333] relative">
+        <h2 className="text-sm font-medium text-gray-400 mb-3">새 알림 등록</h2>
+        
+        {!selectedStock ? (
+          <div className="relative">
+            <div className="flex items-center bg-black border border-[#333] rounded-lg overflow-hidden focus-within:border-emerald-500 transition-colors">
+              <Search className="w-4 h-4 ml-3 text-gray-500" />
+              <input 
+                type="text" 
+                className="w-full bg-transparent p-3 text-sm outline-none"
+                placeholder="종목명 검색 (예: 삼성전자)"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+              />
+            </div>
+            
+            {/* Search Dropdown */}
+            {searchResults.length > 0 && (
+              <ul className="absolute z-10 w-full mt-1 bg-[#222] border border-[#444] rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                {searchResults.map((res, idx) => (
+                  <li 
+                    key={idx} 
+                    className="p-3 hover:bg-[#333] cursor-pointer text-sm flex justify-between items-center transition-colors"
+                    onClick={() => {
+                      setSelectedStock(res);
+                      setQuery("");
+                      setSearchResults([]);
+                    }}
+                  >
+                    <span>{res.name}</span>
+                    <span className="text-xs text-gray-500">{res.code}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center bg-black p-3 rounded-lg border border-[#333]">
+              <div>
+                <div className="font-medium text-emerald-400">{selectedStock.name}</div>
+                <div className="text-xs text-gray-500">현재가: {prices[selectedStock.code]?.price || '조회중...'}원</div>
+              </div>
+              <button 
+                onClick={() => setSelectedStock(null)}
+                className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded bg-[#333]"
+              >
+                취소
+              </button>
+            </div>
+            
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <input 
+                  type="number" 
+                  className="w-full bg-black border border-[#333] rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-colors"
+                  placeholder="목표가 입력 (원)"
+                  value={targetPriceInput}
+                  onChange={e => setTargetPriceInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddAlert(); }}
+                />
+              </div>
+              <button 
+                onClick={handleAddAlert}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-lg flex items-center justify-center transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              입력하신 목표가가 현재가보다 높으면 <strong>상승 돌파 시</strong>,<br/>
+              낮으면 <strong>하락 돌파 시</strong> 자동으로 알림이 설정됩니다.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* Alert List Section */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-gray-400 flex items-center justify-between">
+          <span>활성화된 알림</span>
+          <span className="bg-[#333] text-xs py-0.5 px-2 rounded-full">{alerts.length}</span>
+        </h2>
+        
+        {alerts.length === 0 ? (
+          <div className="text-center py-10 text-gray-600 text-sm border border-dashed border-[#333] rounded-xl">
+            등록된 알림이 없습니다.
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {alerts.map(alert => {
+              const currentPriceStr = prices[alert.code]?.price || "...";
+              
+              return (
+                <li key={alert.id} className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] flex items-center justify-between group">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-[15px]">{alert.name}</span>
+                      <span className="text-xs bg-black text-gray-400 px-1.5 py-0.5 rounded border border-[#333]">
+                        {alert.code}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm mt-1">
+                      <div className={`flex items-center ${alert.type === 'UP' ? 'text-red-400' : 'text-blue-400'}`}>
+                        {alert.type === 'UP' ? <ChevronUp className="w-4 h-4 mr-0.5" /> : <ChevronDown className="w-4 h-4 mr-0.5" />}
+                        {alert.targetPrice.toLocaleString()}원
+                      </div>
+                      <span className="text-gray-600 text-xs">(현재: {currentPriceStr})</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => removeAlert(alert.id)}
+                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-[#222] rounded-lg opacity-50 group-hover:opacity-100 transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+      
+      <footer className="mt-auto pt-4 text-center text-xs text-gray-600">
+        10초 간격으로 가격을 자동 업데이트합니다.
+      </footer>
     </div>
   );
 }
