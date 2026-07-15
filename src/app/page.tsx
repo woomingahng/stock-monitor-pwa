@@ -126,7 +126,10 @@ export default function Home() {
             newPrices[code] = data;
 
             // Check alerts for this code
-            const currentPriceNum = parseInt(data.price.replace(/,/g, ''), 10);
+            const currentPriceVal = data.price;
+            const currentPriceNum = typeof currentPriceVal === 'string' 
+              ? parseInt(currentPriceVal.replace(/,/g, ''), 10) 
+              : Number(currentPriceVal);
             
             alerts.filter(a => a.code === code).forEach(alert => {
               let isTriggered = false;
@@ -184,8 +187,10 @@ export default function Home() {
     if (isNaN(targetNum) || targetNum <= 0) return;
 
     // Get current price to determine UP or DOWN
-    const currentPriceStr = prices[selectedStock.code]?.price || "0";
-    const currentPriceNum = parseInt(currentPriceStr.replace(/,/g, ''), 10);
+    const currentPriceVal = prices[selectedStock.code]?.price || 0;
+    const currentPriceNum = typeof currentPriceVal === 'string' 
+      ? parseInt(currentPriceVal.replace(/,/g, ''), 10) 
+      : Number(currentPriceVal);
     
     if (currentPriceNum === 0) {
       alert("현재가를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
