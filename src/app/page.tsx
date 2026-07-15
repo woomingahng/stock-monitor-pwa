@@ -312,16 +312,16 @@ export default function Home() {
           };
 
           return (
-            <div key={code} className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] flex flex-col gap-4 relative">
+            <div key={code} className="bg-[#1a1a1a] p-2.5 rounded-xl border border-[#333] flex flex-col gap-2 relative">
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-[15px]">{stockName}</span>
-                  <span className="text-[10px] bg-black text-gray-400 px-1.5 py-0.5 rounded border border-[#333]">{code}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-[13px]">{stockName}</span>
+                  <span className="text-[9px] bg-black text-gray-400 px-1 py-0.5 rounded border border-[#333]">{code}</span>
                 </div>
-                <span className="font-semibold text-[15px]">{currentPriceStr}</span>
+                <span className="font-semibold text-[13px]">{currentPriceStr}</span>
               </div>
 
-              <div className="relative w-full h-8 mt-2 mb-2">
+              <div className="relative w-full h-4 mt-1 mb-1">
                 {/* Base line */}
                 <div className="absolute top-1/2 left-0 right-0 h-1 bg-[#333] rounded-full -translate-y-1/2"></div>
                 
@@ -386,14 +386,6 @@ export default function Home() {
         >
           <ExternalLink className="w-3.5 h-3.5" />
           <span className="hidden sm:inline font-medium">PiP 팝업</span>
-        </button>
-        <button 
-          onClick={() => setIsCompact(true)}
-          className="shrink-0 text-gray-400 hover:text-white p-1 rounded hover:bg-[#333] transition-colors flex items-center gap-1 text-xs"
-          title="컴팩트 위젯 모드"
-        >
-          <Minimize2 className="w-4 h-4" />
-          <span className="hidden sm:inline">위젯 모드</span>
         </button>
       </header>
 
