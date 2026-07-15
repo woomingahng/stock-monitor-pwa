@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import iconv from 'iconv-lite';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,9 @@ export async function GET(request: Request) {
       cache: 'no-store'
     });
     
-    const data = await response.json();
+    const buffer = await response.arrayBuffer();
+    const decodedStr = iconv.decode(Buffer.from(buffer), 'EUC-KR');
+    const data = JSON.parse(decodedStr);
     
     if (data.resultCode !== 'success' || !data.result?.areas[0]?.datas[0]) {
       return NextResponse.json({ error: 'Invalid data from Naver' }, { status: 404 });
