@@ -313,11 +313,11 @@ export default function Home() {
 
           return (
             <div key={code} className="bg-[#1a1a1a] p-2.5 rounded-xl border border-[#333] flex flex-col gap-2 relative">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-bold bg-black text-gray-200 px-1.5 py-0.5 rounded border border-[#333]" title={stockName}>{code}</span>
+              <div className="flex justify-between items-center min-w-0 gap-2">
+                <div className="flex items-center gap-1.5 min-w-0 shrink">
+                  <span className="text-[11px] font-bold bg-black text-gray-200 px-1.5 py-0.5 rounded border border-[#333] truncate shrink" title={stockName}>{code}</span>
                 </div>
-                <span className="font-semibold text-[13px]">{currentPriceStr}</span>
+                <span className="font-semibold text-[13px] shrink-0">{currentPriceStr}</span>
               </div>
 
               <div className="relative w-full h-2 my-1">
@@ -409,7 +409,7 @@ export default function Home() {
         {!selectedStock ? (
           <div className="relative">
             <div className="flex items-center bg-black border border-[#333] rounded-lg overflow-hidden focus-within:border-emerald-500 transition-colors">
-              <Search className="w-4 h-4 ml-3 text-gray-500" />
+              <Search className="w-4 h-4 ml-3 text-gray-500 shrink-0" />
               <input 
                 type="text" 
                 className="w-full bg-transparent p-3 text-sm outline-none min-w-0"
@@ -455,10 +455,10 @@ export default function Home() {
             </div>
             
             <div className="flex gap-2">
-              <div className="flex-1 relative">
+              <div className="flex-1 relative min-w-0">
                 <input 
                   type="number" 
-                  className="w-full bg-black border border-[#333] rounded-lg p-3 text-sm outline-none focus:border-emerald-500 transition-colors"
+                  className="w-full bg-black border border-[#333] rounded-lg p-3 text-sm outline-none min-w-0 focus:border-emerald-500 transition-colors"
                   placeholder="목표가 입력 (원)"
                   value={targetPriceInput}
                   onChange={e => setTargetPriceInput(e.target.value)}
@@ -467,7 +467,7 @@ export default function Home() {
               </div>
               <button 
                 onClick={handleAddAlert}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-lg flex items-center justify-center transition-colors"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-lg flex items-center justify-center transition-colors shrink-0"
               >
                 <Plus className="w-5 h-5" />
               </button>
