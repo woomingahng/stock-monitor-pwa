@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "주식 모니터 (Stock Monitor)",
-  description: "윈도우 데스크탑용 무설치 주식 알림 위젯",
+  title: "모니터 (Monitor)",
+  description: "윈도우 데스크탑용 무설치 알림 위젯",
   manifest: "/manifest.json",
   icons: {
     icon: "/icon.svg",

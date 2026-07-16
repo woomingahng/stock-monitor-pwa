@@ -1,7 +1,7 @@
 {
-  "name": "주식 모니터 (Stock Monitor)",
-  "short_name": "주식모니터",
-  "description": "지정한 주식 목표가에 도달하면 윈도우 알림을 제공하는 심플 위젯 앱",
+  "name": "모니터 (Monitor)",
+  "short_name": "모니터",
+  "description": "지정한 목표가에 도달하면 윈도우 알림을 제공하는 심플 위젯 앱",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

@@ -150,7 +150,7 @@ export default function Home() {
               if (isTriggered && !alertsToRemove.includes(alert.id)) {
                 // Trigger notification
                 if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-                  new Notification(`주식 알림: ${alert.name}`, {
+                  new Notification(`알림: ${alert.name}`, {
                     body: `목표가 ${alert.targetPrice.toLocaleString()}원 도달! (현재가: ${data.price}원)`,
                     icon: '/icon-192x192.png'
                   });
@@ -315,8 +315,7 @@ export default function Home() {
             <div key={code} className="bg-[#1a1a1a] p-2.5 rounded-xl border border-[#333] flex flex-col gap-2 relative">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-[13px]">{stockName}</span>
-                  <span className="text-[9px] bg-black text-gray-400 px-1 py-0.5 rounded border border-[#333]">{code}</span>
+                  <span className="text-[11px] font-bold bg-black text-gray-200 px-1.5 py-0.5 rounded border border-[#333]" title={stockName}>{code}</span>
                 </div>
                 <span className="font-semibold text-[13px]">{currentPriceStr}</span>
               </div>
@@ -397,7 +396,7 @@ export default function Home() {
     <div className="min-h-screen p-2 max-w-sm mx-auto flex flex-col gap-4 transition-all overflow-x-hidden">
       <header className="flex items-center gap-2 pb-2 border-b border-[#333]">
         <Bell className="w-5 h-5 text-emerald-400 shrink-0" />
-        <h1 className="text-lg font-bold tracking-tight truncate">주식 모니터</h1>
+        <h1 className="text-lg font-bold tracking-tight truncate">모니터</h1>
         <button 
           onClick={openPiP}
           className="ml-auto shrink-0 text-emerald-500 hover:text-emerald-400 p-1.5 rounded bg-[#222] hover:bg-[#333] transition-colors flex items-center gap-1 text-xs border border-[#333]"
