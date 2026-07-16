@@ -82,7 +82,7 @@ export default function Home() {
       
       // 데스크톱 PWA 환경일 경우 창 크기를 매우 작게 강제 조정 시도
       try {
-        window.resizeTo(300, 500);
+        window.resizeTo(250, 400);
       } catch (e) {}
     }
   }, []);
@@ -237,8 +237,8 @@ export default function Home() {
     }
     try {
       const pip = await (window as any).documentPictureInPicture.requestWindow({
-        width: 320,
-        height: 400,
+        width: 240,
+        height: 300
       });
       
       [...document.styleSheets].forEach((styleSheet) => {
@@ -320,7 +320,7 @@ export default function Home() {
                 <span className="font-semibold text-[13px]">{currentPriceStr}</span>
               </div>
 
-              <div className="relative w-full h-4 mt-1 mb-1">
+              <div className="relative w-full h-2 my-1">
                 {/* Base line */}
                 <div className="absolute top-1/2 left-0 right-0 h-1 bg-[#333] rounded-full -translate-y-1/2"></div>
                 
@@ -332,11 +332,11 @@ export default function Home() {
                     onMouseEnter={() => setHoveredMarkerId(`current-${code}`)}
                     onMouseLeave={() => setHoveredMarkerId(null)}
                   >
-                    <div className="w-3.5 h-3.5 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
+                    <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
                     {hoveredMarkerId === `current-${code}` && (
                       <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
                            style={{
-                             top: '14px',
+                             top: '10px',
                              left: '50%',
                              transform: 'translateX(-50%)'
                            }}>
@@ -350,27 +350,24 @@ export default function Home() {
                 {stockAlerts.map(alert => (
                   <div 
                     key={alert.id}
-                    className="absolute flex flex-col items-center -translate-x-1/2 z-20 cursor-pointer"
-                    style={{ 
-                      left: `${getLeft(alert.targetPrice)}%`,
-                      top: alert.type === 'UP' ? '50%' : 'auto',
-                      bottom: alert.type === 'DOWN' ? '50%' : 'auto',
-                    }}
+                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 cursor-pointer flex items-center justify-center"
+                    style={{ left: `${getLeft(alert.targetPrice)}%` }}
                     onMouseEnter={() => setHoveredMarkerId(alert.id)}
                     onMouseLeave={() => setHoveredMarkerId(null)}
                   >
                     {alert.type === 'UP' ? (
-                       <div className="w-0 h-0 border-l-transparent border-r-transparent border-b-red-500 mt-1 border-l-[6px] border-r-[6px] border-b-[8px]"></div>
+                       <div className="w-1.5 h-3 bg-red-500 rounded-full shadow-[0_0_5px_rgba(239,68,68,0.5)]"></div>
                     ) : (
-                       <div className="w-0 h-0 border-l-transparent border-r-transparent border-t-blue-500 mb-1 border-l-[6px] border-r-[6px] border-t-[8px]"></div>
+                       <div className="w-1.5 h-3 bg-blue-500 rounded-full shadow-[0_0_5px_rgba(59,130,246,0.5)]"></div>
                     )}
                     
                     {/* Tooltip on hover */}
                     {hoveredMarkerId === alert.id && (
-                      <div className="absolute bg-[#111] px-2 py-1.5 rounded border border-[#444] whitespace-nowrap z-[100] flex items-center gap-2 shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px]"
+                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] flex items-center gap-2 shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px]"
                            style={{
-                             top: alert.type === 'UP' ? '14px' : 'auto',
-                             bottom: alert.type === 'DOWN' ? '14px' : 'auto',
+                             bottom: '10px',
+                             left: '50%',
+                             transform: 'translateX(-50%)'
                            }}>
                         <span className={alert.type === 'UP' ? 'text-red-400 font-bold' : 'text-blue-400 font-bold'}>
                           목표: {alert.targetPrice.toLocaleString()}원
