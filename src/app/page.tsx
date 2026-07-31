@@ -126,7 +126,8 @@ export default function Home() {
       const uniqueCodes = Array.from(new Set(alerts.map(a => a.code)));
       const newPrices: Record<string, PriceData> = { ...prices };
       
-      let alertsToRemove: string[] = [];
+      const alertsToRemove: string[] = [];
+      const alertsToAdd: Alert[] = [];
 
       await Promise.all(
         uniqueCodes.map(async (code) => {
@@ -142,7 +143,14 @@ export default function Home() {
               ? parseInt(currentPriceVal.replace(/,/g, ''), 10) 
               : Number(currentPriceVal);
             
-            alerts.filter(a => a.code === code).forEach(alert => {
+            const stockAlerts = alerts.filter(a => a.code === code);
+            const upAlerts = stockAlerts.filter(a => a.type === "UP");
+            const downAlerts = stockAlerts.filter(a => a.type === "DOWN");
+            
+            const maxUpTarget = upAlerts.length > 0 ? Math.max(...upAlerts.map(a => a.targetPrice)) : -1;
+            const minDownTarget = downAlerts.length > 0 ? Math.min(...downAlerts.map(a => a.targetPrice)) : Infinity;
+
+            stockAlerts.forEach(alert => {
               let isTriggered = false;
               if (alert.type === "UP" && currentPriceNum >= alert.targetPrice) isTriggered = true;
               if (alert.type === "DOWN" && currentPriceNum <= alert.targetPrice) isTriggered = true;
@@ -157,6 +165,27 @@ export default function Home() {
                 }
                 playBeep();
                 alertsToRemove.push(alert.id);
+
+                // Auto create 3% alert if max/min is breached
+                if (alert.type === "UP" && alert.targetPrice === maxUpTarget) {
+                  alertsToAdd.push({
+                    id: Date.now().toString() + Math.random().toString().slice(2, 6),
+                    code: code,
+                    name: alert.name,
+                    targetPrice: Math.round(currentPriceNum * 1.03),
+                    type: "UP",
+                    registeredPrice: currentPriceNum
+                  });
+                } else if (alert.type === "DOWN" && alert.targetPrice === minDownTarget) {
+                  alertsToAdd.push({
+                    id: Date.now().toString() + Math.random().toString().slice(2, 6),
+                    code: code,
+                    name: alert.name,
+                    targetPrice: Math.round(currentPriceNum * 0.97),
+                    type: "DOWN",
+                    registeredPrice: currentPriceNum
+                  });
+                }
               }
             });
           } catch (e) {
@@ -167,8 +196,11 @@ export default function Home() {
 
       setPrices(newPrices);
 
-      if (alertsToRemove.length > 0) {
-        setAlerts(prev => prev.filter(a => !alertsToRemove.includes(a.id)));
+      if (alertsToRemove.length > 0 || alertsToAdd.length > 0) {
+        setAlerts(prev => {
+          const filtered = prev.filter(a => !alertsToRemove.includes(a.id));
+          return [...filtered, ...alertsToAdd];
+        });
       }
     };
 
@@ -194,9 +226,6 @@ export default function Home() {
   const handleAddAlert = () => {
     if (!selectedStock || !targetPriceInput) return;
     
-    const targetNum = parseInt(targetPriceInput.replace(/,/g, ''), 10);
-    if (isNaN(targetNum) || targetNum <= 0) return;
-
     // Get current price to determine UP or DOWN
     const currentPriceVal = prices[selectedStock.code]?.price || 0;
     const currentPriceNum = typeof currentPriceVal === 'string' 
@@ -207,6 +236,19 @@ export default function Home() {
       alert("현재가를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
     }
+
+    let targetNum: number;
+    
+    if (targetPriceInput.includes('%')) {
+      const percentStr = targetPriceInput.replace(/%/g, '').trim();
+      const percentNum = parseFloat(percentStr);
+      if (isNaN(percentNum)) return;
+      targetNum = Math.round(currentPriceNum * (1 + percentNum / 100));
+    } else {
+      targetNum = parseInt(targetPriceInput.replace(/,/g, ''), 10);
+    }
+    
+    if (isNaN(targetNum) || targetNum <= 0) return;
 
     const type = targetNum >= currentPriceNum ? "UP" : "DOWN";
 
@@ -315,7 +357,15 @@ export default function Home() {
             <div key={code} className="bg-[#1a1a1a] p-2.5 rounded-xl border border-[#333] flex flex-col gap-2 relative">
               <div className="flex justify-between items-center min-w-0 gap-2">
                 <div className="flex items-center gap-1.5 min-w-0 shrink">
-                  <span className="text-[11px] font-bold bg-black text-gray-200 px-1.5 py-0.5 rounded border border-[#333] truncate shrink" title={stockName}>{code}</span>
+                  <span 
+                    className="text-[11px] font-bold bg-black text-gray-200 px-1.5 py-0.5 rounded border border-[#333] truncate shrink cursor-pointer hover:bg-[#333] transition-colors" 
+                    title={stockName}
+                    onDoubleClick={() => {
+                      setSelectedStock({ code, name: stockName });
+                      setQuery("");
+                      setSearchResults([]);
+                    }}
+                  >{code}</span>
                 </div>
                 <span className="font-semibold text-[13px] shrink-0">{currentPriceStr}</span>
               </div>
@@ -457,9 +507,9 @@ export default function Home() {
             <div className="flex gap-2">
               <div className="flex-1 relative min-w-0">
                 <input 
-                  type="number" 
+                  type="text" 
                   className="w-full bg-black border border-[#333] rounded-lg p-3 text-sm outline-none min-w-0 focus:border-emerald-500 transition-colors"
-                  placeholder="목표가 입력 (원)"
+                  placeholder="목표가 입력 (원 또는 %)"
                   value={targetPriceInput}
                   onChange={e => setTargetPriceInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleAddAlert(); }}
