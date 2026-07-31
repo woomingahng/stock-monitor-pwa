@@ -344,12 +344,20 @@ export default function Home() {
           const minTarget = Math.min(...stockAlerts.map(a => a.targetPrice));
           const maxTarget = Math.max(...stockAlerts.map(a => a.targetPrice));
           
-          const minBound = Math.min(low, minTarget, currentPrice) * 0.98;
-          const maxBound = Math.max(high, maxTarget, currentPrice) * 1.02;
+          let minBound = minTarget;
+          let maxBound = maxTarget;
+
+          // 알림이 하나뿐이라 최상단/최하단이 같을 경우를 대비해 약간의 여백(범위)을 줌
+          if (minBound === maxBound) {
+            minBound = minTarget * 0.9;
+            maxBound = maxTarget * 1.1;
+          }
+
           const range = maxBound - minBound;
 
           const getLeft = (val: number) => {
             if (range === 0) return 50;
+            // 0 ~ 100% 사이로 제한
             return Math.max(0, Math.min(100, ((val - minBound) / range) * 100));
           };
 
