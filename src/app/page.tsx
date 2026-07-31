@@ -396,7 +396,7 @@ export default function Home() {
                     {hoveredMarkerId === `current-${code}` && (
                       <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
                            style={{
-                             top: '10px',
+                             bottom: '12px',
                              left: '50%',
                              transform: 'translateX(-50%)'
                            }}>
@@ -417,7 +417,7 @@ export default function Home() {
                     <div className="w-1.5 h-1.5 bg-yellow-400 rounded-sm rotate-45 shadow-[0_0_5px_rgba(250,204,21,0.6)]"></div>
                     {hoveredMarkerId === `open-${code}` && (
                       <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
-                           style={{ top: '10px', left: '50%', transform: 'translateX(-50%)' }}>
+                           style={{ bottom: '12px', left: '50%', transform: 'translateX(-50%)' }}>
                         시가: <span className="font-bold text-yellow-400">{open.toLocaleString()}</span>원
                       </div>
                     )}
@@ -432,11 +432,11 @@ export default function Home() {
                     onMouseEnter={() => setHoveredMarkerId(`high-${code}`)}
                     onMouseLeave={() => setHoveredMarkerId(null)}
                   >
-                    <div className="w-1.5 h-1.5 bg-red-400 rounded-sm shadow-[0_0_5px_rgba(248,113,113,0.6)]"></div>
+                    <div className="w-1.5 h-1.5 bg-pink-400 rounded-sm shadow-[0_0_5px_rgba(244,114,182,0.6)]"></div>
                     {hoveredMarkerId === `high-${code}` && (
                       <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
-                           style={{ top: '10px', left: '50%', transform: 'translateX(-50%)' }}>
-                        고가: <span className="font-bold text-red-400">{high.toLocaleString()}</span>원
+                           style={{ bottom: '12px', left: '50%', transform: 'translateX(-50%)' }}>
+                        고가: <span className="font-bold text-pink-400">{high.toLocaleString()}</span>원
                       </div>
                     )}
                   </div>
@@ -450,11 +450,11 @@ export default function Home() {
                     onMouseEnter={() => setHoveredMarkerId(`low-${code}`)}
                     onMouseLeave={() => setHoveredMarkerId(null)}
                   >
-                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-sm shadow-[0_0_5px_rgba(96,165,250,0.6)]"></div>
+                    <div className="w-1.5 h-1.5 bg-cyan-400 rounded-sm shadow-[0_0_5px_rgba(34,211,238,0.6)]"></div>
                     {hoveredMarkerId === `low-${code}` && (
                       <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
-                           style={{ top: '10px', left: '50%', transform: 'translateX(-50%)' }}>
-                        저가: <span className="font-bold text-blue-400">{low.toLocaleString()}</span>원
+                           style={{ bottom: '12px', left: '50%', transform: 'translateX(-50%)' }}>
+                        저가: <span className="font-bold text-cyan-400">{low.toLocaleString()}</span>원
                       </div>
                     )}
                   </div>
@@ -479,7 +479,7 @@ export default function Home() {
                     {hoveredMarkerId === alert.id && (
                       <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] flex items-center gap-2 shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px]"
                            style={{
-                             bottom: '10px',
+                             bottom: '12px',
                              left: '50%',
                              transform: 'translateX(-50%)'
                            }}>
