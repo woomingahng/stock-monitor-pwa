@@ -26,6 +26,7 @@ interface PriceData {
   changeRate: string;
   low?: number;
   high?: number;
+  open?: number;
   prevClose?: number;
 }
 
@@ -338,8 +339,9 @@ export default function Home() {
           const stockName = stockInfo?.name || stockAlerts[0].name;
           const currentPrice = stockInfo?.price ? Number(stockInfo.price.toString().replace(/,/g, '')) : 0;
           const currentPriceStr = stockInfo?.price || "...";
-          const low = stockInfo?.low ? Number(stockInfo.low) : currentPrice * 0.95;
-          const high = stockInfo?.high ? Number(stockInfo.high) : currentPrice * 1.05;
+          const low = stockInfo?.low ? Number(stockInfo.low) : 0;
+          const high = stockInfo?.high ? Number(stockInfo.high) : 0;
+          const open = stockInfo?.open ? Number(stockInfo.open) : 0;
 
           const minTarget = Math.min(...stockAlerts.map(a => a.targetPrice));
           const maxTarget = Math.max(...stockAlerts.map(a => a.targetPrice));
@@ -399,6 +401,60 @@ export default function Home() {
                              transform: 'translateX(-50%)'
                            }}>
                         현재: <span className="font-bold text-white">{currentPriceStr}</span>원
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Open Price Marker */}
+                {open > 0 && (
+                  <div 
+                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 cursor-pointer"
+                    style={{ left: `${getLeft(open)}%` }}
+                    onMouseEnter={() => setHoveredMarkerId(`open-${code}`)}
+                    onMouseLeave={() => setHoveredMarkerId(null)}
+                  >
+                    <div className="w-1.5 h-1.5 bg-yellow-400 rounded-sm rotate-45 shadow-[0_0_5px_rgba(250,204,21,0.6)]"></div>
+                    {hoveredMarkerId === `open-${code}` && (
+                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
+                           style={{ top: '10px', left: '50%', transform: 'translateX(-50%)' }}>
+                        시가: <span className="font-bold text-yellow-400">{open.toLocaleString()}</span>원
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* High Price Marker */}
+                {high > 0 && (
+                  <div 
+                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 cursor-pointer"
+                    style={{ left: `${getLeft(high)}%` }}
+                    onMouseEnter={() => setHoveredMarkerId(`high-${code}`)}
+                    onMouseLeave={() => setHoveredMarkerId(null)}
+                  >
+                    <div className="w-1.5 h-1.5 bg-red-400 rounded-sm shadow-[0_0_5px_rgba(248,113,113,0.6)]"></div>
+                    {hoveredMarkerId === `high-${code}` && (
+                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
+                           style={{ top: '10px', left: '50%', transform: 'translateX(-50%)' }}>
+                        고가: <span className="font-bold text-red-400">{high.toLocaleString()}</span>원
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Low Price Marker */}
+                {low > 0 && (
+                  <div 
+                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 cursor-pointer"
+                    style={{ left: `${getLeft(low)}%` }}
+                    onMouseEnter={() => setHoveredMarkerId(`low-${code}`)}
+                    onMouseLeave={() => setHoveredMarkerId(null)}
+                  >
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-sm shadow-[0_0_5px_rgba(96,165,250,0.6)]"></div>
+                    {hoveredMarkerId === `low-${code}` && (
+                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
+                           style={{ top: '10px', left: '50%', transform: 'translateX(-50%)' }}>
+                        저가: <span className="font-bold text-blue-400">{low.toLocaleString()}</span>원
                       </div>
                     )}
                   </div>

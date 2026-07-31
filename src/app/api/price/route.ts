@@ -37,6 +37,7 @@ export async function GET(request: Request) {
       changeRate: stockData.cr,
       low: stockData.lv,
       high: stockData.hv,
+      open: stockData.ov,
       prevClose: stockData.pcv,
     });
   } catch (error) {
