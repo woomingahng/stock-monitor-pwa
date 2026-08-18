@@ -363,6 +363,28 @@ export default function Home() {
             return Math.max(0, Math.min(100, ((val - minBound) / range) * 100));
           };
 
+          const getTooltipStyle = (leftPercent: number) => {
+            if (leftPercent > 70) {
+              return {
+                bottom: '12px',
+                right: '-4px',
+                transform: 'none'
+              };
+            }
+            if (leftPercent < 30) {
+              return {
+                bottom: '12px',
+                left: '-4px',
+                transform: 'none'
+              };
+            }
+            return {
+              bottom: '12px',
+              left: '50%',
+              transform: 'translateX(-50%)'
+            };
+          };
+
           return (
             <div key={code} className="bg-[#1a1a1a] p-2.5 rounded-xl border border-[#333] flex flex-col gap-2 relative">
               <div className="flex justify-between items-center min-w-0 gap-2">
@@ -394,12 +416,8 @@ export default function Home() {
                   >
                     <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
                     {hoveredMarkerId === `current-${code}` && (
-                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
-                           style={{
-                             bottom: '12px',
-                             left: '50%',
-                             transform: 'translateX(-50%)'
-                           }}>
+                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300 pointer-events-none"
+                           style={getTooltipStyle(getLeft(currentPrice))}>
                         현재: <span className="font-bold text-white">{currentPriceStr}</span>원
                       </div>
                     )}
@@ -416,8 +434,8 @@ export default function Home() {
                   >
                     <div className="w-1.5 h-1.5 bg-yellow-400 rounded-sm rotate-45 shadow-[0_0_5px_rgba(250,204,21,0.6)]"></div>
                     {hoveredMarkerId === `open-${code}` && (
-                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
-                           style={{ bottom: '12px', left: '50%', transform: 'translateX(-50%)' }}>
+                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300 pointer-events-none"
+                           style={getTooltipStyle(getLeft(open))}>
                         시가: <span className="font-bold text-yellow-400">{open.toLocaleString()}</span>원
                       </div>
                     )}
@@ -434,8 +452,8 @@ export default function Home() {
                   >
                     <div className="w-1.5 h-1.5 bg-pink-400 rounded-sm shadow-[0_0_5px_rgba(244,114,182,0.6)]"></div>
                     {hoveredMarkerId === `high-${code}` && (
-                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
-                           style={{ bottom: '12px', left: '50%', transform: 'translateX(-50%)' }}>
+                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300 pointer-events-none"
+                           style={getTooltipStyle(getLeft(high))}>
                         고가: <span className="font-bold text-pink-400">{high.toLocaleString()}</span>원
                       </div>
                     )}
@@ -452,8 +470,8 @@ export default function Home() {
                   >
                     <div className="w-1.5 h-1.5 bg-cyan-400 rounded-sm shadow-[0_0_5px_rgba(34,211,238,0.6)]"></div>
                     {hoveredMarkerId === `low-${code}` && (
-                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300"
-                           style={{ bottom: '12px', left: '50%', transform: 'translateX(-50%)' }}>
+                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px] text-gray-300 pointer-events-none"
+                           style={getTooltipStyle(getLeft(low))}>
                         저가: <span className="font-bold text-cyan-400">{low.toLocaleString()}</span>원
                       </div>
                     )}
@@ -461,38 +479,41 @@ export default function Home() {
                 )}
 
                 {/* Target Price Markers */}
-                {stockAlerts.map(alert => (
-                  <div 
-                    key={alert.id}
-                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 cursor-pointer flex items-center justify-center"
-                    style={{ left: `${getLeft(alert.targetPrice)}%` }}
-                    onMouseEnter={() => setHoveredMarkerId(alert.id)}
-                    onMouseLeave={() => setHoveredMarkerId(null)}
-                  >
-                    {alert.type === 'UP' ? (
-                       <div className="w-1.5 h-3 bg-red-500 rounded-full shadow-[0_0_5px_rgba(239,68,68,0.5)]"></div>
-                    ) : (
-                       <div className="w-1.5 h-3 bg-blue-500 rounded-full shadow-[0_0_5px_rgba(59,130,246,0.5)]"></div>
-                    )}
-                    
-                    {/* Tooltip on hover */}
-                    {hoveredMarkerId === alert.id && (
-                      <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] flex items-center gap-2 shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px]"
-                           style={{
-                             bottom: '12px',
-                             left: '50%',
-                             transform: 'translateX(-50%)'
-                           }}>
-                        <span className={alert.type === 'UP' ? 'text-red-400 font-bold' : 'text-blue-400 font-bold'}>
-                          목표: {alert.targetPrice.toLocaleString()}원
-                        </span>
-                        <button onClick={(e) => { e.stopPropagation(); removeAlert(alert.id); }} className="text-gray-500 hover:text-red-400 p-0.5 rounded hover:bg-[#222]">
-                           <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {stockAlerts.map(alert => {
+                  const leftPercent = getLeft(alert.targetPrice);
+                  return (
+                    <div 
+                      key={alert.id}
+                      className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 cursor-pointer flex items-center justify-center"
+                      style={{ left: `${leftPercent}%` }}
+                      onMouseEnter={() => setHoveredMarkerId(alert.id)}
+                      onMouseLeave={() => setHoveredMarkerId(null)}
+                    >
+                      {alert.type === 'UP' ? (
+                         <div className="w-1.5 h-3 bg-red-500 rounded-full shadow-[0_0_5px_rgba(239,68,68,0.5)]"></div>
+                      ) : (
+                         <div className="w-1.5 h-3 bg-blue-500 rounded-full shadow-[0_0_5px_rgba(59,130,246,0.5)]"></div>
+                      )}
+                      
+                      {/* Tooltip on hover */}
+                      {hoveredMarkerId === alert.id && (
+                        <div className="absolute bg-[#111] px-2 py-1 rounded border border-[#444] whitespace-nowrap z-[100] flex items-center gap-2 shadow-[0_0_10px_rgba(0,0,0,0.8)] text-[10px]"
+                             style={getTooltipStyle(leftPercent)}>
+                          <span className={alert.type === 'UP' ? 'text-red-400 font-bold' : 'text-blue-400 font-bold'}>
+                            목표: {alert.targetPrice.toLocaleString()}원
+                          </span>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); removeAlert(alert.id); }} 
+                            className="text-gray-400 hover:text-red-400 p-0.5 rounded hover:bg-[#222] transition-colors"
+                            title="알림 삭제"
+                          >
+                             <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
